@@ -1,11 +1,14 @@
 #include<stdio.h>
 #include<string.h>
 #include <stdlib.h>
+#include "data.h"
 
 #define SIZE 256 
 #define FALSE 1
 #define TRUE 0
 #define LIST_NUMBER ((sizeof g)/(sizeof(ptr_file)))
+
+
 
 typedef struct PTR_FILE{
     int address;
@@ -13,12 +16,8 @@ typedef struct PTR_FILE{
     char *operand1;
     char *operand2;
     char *operand3;
+    char *operand4;
 }ptr_file;
-
-typedef struct LABEL_ADDRESS{
-    int address;
-    char *label;
-}label_address;
 
 int main(void){
     //ファイルの読み込み
@@ -90,21 +89,23 @@ int main(void){
         char *operand1;
         char *operand2;
         char *operand3;
+        char *operand4;
         address = len;
         label = ptr[0];
         operand1 = ptr[1];
         operand2 = ptr[2];
         operand3 = ptr[3];
+        operand3 = ptr[4];
         //オペランド1が START,ENDではないとき，構造体に登録
         if (operand1!=NULL){
             if((strcmp(operand1,"START")!=0)&&(strcmp(operand1,"END")!=0)){
-                ptr_file  add = {address,label,operand1,operand2,operand3};
+                ptr_file  add = {address,label,operand1,operand2,operand3,operand4};
                 g[len] = add;
                 len++;
             }
         }
         else{
-            ptr_file  add = {address,label,operand1,operand2,operand3};
+            ptr_file  add = {address,label,operand1,operand2,operand3,operand4};
             g[len] = add;
             len++;
         }
@@ -113,22 +114,20 @@ int main(void){
     ptr_file *p = g;
 
     //ラベル名とアドレスの構造体を作成する
-    label_address la[count];
     int num = 0;
     for (int l = 0; l < len; l++) {
-        if(p->label!=NULL){
-            label_address add = {p->address,p->label};
-            la[num] = add;
+        if(p->operand1!=NULL){
+            int m = 0;
+            for(int m = 0;m < WL_NUMBER;m++){
+                if(strcmp(p->operand1,wl[m].command)==0){
+                    printf("%s %d %d %d\n",wl[m].command,wl[m].command_length,wl[m].length1,wl[m].length2);
+                }
+                m++;
+            }
             num++;
         }
         p++;
     }
-    label_address *pla = la;
-    for(int l = 0; l < num;l++){
-        printf("%04X %s\n",pla->address,pla->label);
-        pla++;
-    }
-
     fclose(fp);
     return TRUE;
 }
