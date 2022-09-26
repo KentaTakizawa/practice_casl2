@@ -21,7 +21,7 @@ typedef struct PTR_FILE{
 //文字列からスペースを消す関数
 void removeSpace(char *arr, int n);
 void addlist(ptr_file *list,int address,char *label,char *command,char *operand1,char *operand2,char *operand3);
-void searchLabel(ptr_file *list);
+char *searchLabel(ptr_file *list);
 void init_list(ptr_file *list);
 void freememory(ptr_file *list);
 int command_literal(ptr_file *list,int address);
@@ -134,20 +134,47 @@ int main(void){
         strtok(operand3,";");
         //オペランド1が START,ENDではないとき，構造体に登録
         if (command!=NULL){
-            if((strcmp(command,"START")!=0)&&(strcmp(command,"END")!=0)){
+            if((strcmp(command,"START")!=0)&&(strcmp(command,"END")!=0)&&(strcmp(command,"DC")!=0)){
                 addlist(&list,address,label,command,operand1,operand2,operand3);
                 len++;
                 address++;
             }
             else if(strcmp(command,"START")==0){
-                addlist(&list,address,label,command,operand1,operand2,operand3);
-                len++;
+                if(operand1==NULL){
+                    addlist(&list,address,label,command,operand1,operand2,operand3);
+                    len++;
+                }
+                else{
+                    addlist(&list,address,label,command,operand1,operand2,operand3);
+                    len++;
+                    address++;
+                }              
             }
             else if(strcmp(command,"END")==0){
                 address--;
                 addlist(&list,address,label,command,operand1,operand2,operand3);
                 len++;
                 address++;
+            }
+            else if(strcmp(command,"DC")==0){
+                int DC_num;
+                char *end;
+                DC_num = strtol(operand1,&end,10);
+                if(*end == '\0'){
+                    int dc_num=0;
+                    while(1){
+                        if(dc_num < DC_num){
+                            address++;
+                            dc_num++;
+                        }
+                        else{
+                            break;
+                        }
+                    }
+                }
+                else{
+                    printf("数値を記入してください\n");
+                }
             }
         }
         else{
@@ -161,7 +188,9 @@ int main(void){
     address =  command_literal(&list,address);
 
     //命令とコマンドの検索
-    searchLabel(&list);
+    char *txt_list;
+    txt_list = searchLabel(&list);
+    printf("%s",txt_list);
     fclose(fp);
     // メモリの開放
     freememory(&list);
@@ -292,50 +321,58 @@ int command_literal(ptr_file *list,int address){
 }
 
 //命令の検索
-void searchLabel(ptr_file *list) {
-    while(list->next != NULL) {
-        list = list->next;
-        char *txt_command;
-        // printf("%d %s %s %s %s %s\n" ,list->address,list->label,list->command,list->operand1,list->operand2,list->operand3);
-        for(int m = 0;m < CL_NUMBER;m++){
-            //ラベル名と対応する構造体を検索
-            if(strcmp(list->command,cl[m].command)==0){
-                // printf("\n%d %s %s %s %s %s\n" ,list->address,list->label,list->command,list->operand1,list->operand2,list->operand3);
-                if(cl[m].command_length==0){
-                    printf("アセンブラ命令・マクロ命令です\n");
-                }
-                else if(cl[m].command_length==1){
-                    // printf("1語長の命令です %s\n",cl[m].length1);
-                    txt_command = address_converting_1_word_length(list->command,list->operand1,list->operand2);
-                    printf("%s",txt_command);
-                }
-                else if(cl[m].command_length==2){
-                    // printf("2語長の命令です %s\n",cl[m].length2);
-                    txt_command = address_converting_2_word_length(list,list->command,list->operand1,list->operand2,list->operand3);
-                    printf("%s",txt_command);
-                }
-                else if(cl[m].command_length==3){
-                    if(word_length_judge(list->operand1,list->operand2,list->operand3)==1){
-                        // printf("1語長の命令です! %s\n",cl[m].length1);
-                        txt_command = address_converting_1_word_length(list->command,list->operand1,list->operand2);
-                        printf("%s",txt_command);
+char *searchLabel(ptr_file *list) {
+    char *txt_list=NULL;
+    txt_list= (char*)malloc(sizeof(char) * 500);
+    if (txt_list == NULL) {
+        printf("配列作成失敗\n");
+    }
+    else{
+        while(list->next != NULL) {
+            list = list->next;
+            char *txt_command;
+            // printf("%d %s %s %s %s %s\n" ,list->address,list->label,list->command,list->operand1,list->operand2,list->operand3);
+            for(int m = 0;m < CL_NUMBER;m++){
+                //ラベル名と対応する構造体を検索
+                if(strcmp(list->command,cl[m].command)==0){
+                    // printf("\n%d %s %s %s %s %s\n" ,list->address,list->label,list->command,list->operand1,list->operand2,list->operand3);
+                    if(cl[m].command_length==0){
+                        // printf("アセンブラ命令・マクロ命令です\n");
                     }
-                    else if(word_length_judge(list->operand1,list->operand2,list->operand3)==2){
-                        // printf("2語長の命令です! %s\n",cl[m].length2);
+                    else if(cl[m].command_length==1){
+                        // printf("1語長の命令です %s\n",cl[m].length1);
+                        txt_command = address_converting_1_word_length(list->command,list->operand1,list->operand2);
+                        strcat(txt_list, txt_command);
+                    }
+                    else if(cl[m].command_length==2){
+                        // printf("2語長の命令です %s\n",cl[m].length2);
                         txt_command = address_converting_2_word_length(list,list->command,list->operand1,list->operand2,list->operand3);
-                        printf("%s",txt_command);
+                        strcat(txt_list, txt_command);
+                    }
+                    else if(cl[m].command_length==3){
+                        if(word_length_judge(list->operand1,list->operand2,list->operand3)==1){
+                            // printf("1語長の命令です! %s\n",cl[m].length1);
+                            txt_command = address_converting_1_word_length(list->command,list->operand1,list->operand2);
+                            strcat(txt_list, txt_command);
+                        }
+                        else if(word_length_judge(list->operand1,list->operand2,list->operand3)==2){
+                            // printf("2語長の命令です! %s\n",cl[m].length2);
+                            txt_command = address_converting_2_word_length(list,list->command,list->operand1,list->operand2,list->operand3);
+                            strcat(txt_list, txt_command);
+                        }
+                        else{
+                            printf("判別エラーです\n");
+                        }
                     }
                     else{
-                        printf("判別エラーです\n");
+                        printf("定義外の命令です\n");
                     }
+                    // printf("%s %d %s %s\n",cl[m].command,cl[m].command_length,cl[m].length1,cl[m].length2);
                 }
-                else{
-                    printf("定義外の命令です\n");
-                }
-                // printf("%s %d %s %s\n",cl[m].command,cl[m].command_length,cl[m].length1,cl[m].length2);
             }
         }
-    }  
+    }
+    return txt_list;
 }
 
 
@@ -539,7 +576,10 @@ char* address_converting_2_word_length(ptr_file *list,char *command,char *operan
          while(list->next != NULL) {
             list = list->next;
             if((list->label!=NULL)&&(strcmp(address_name,list->label)==0)){
-                printf("\n%s %d\n\n",list->label,list->address);
+                address_name = convert_hexadecimal(list->address);
+                address_name[4]='\0';
+                strcat(address_number,address_name);
+                strcat(address_number,"\n");
             }
         }
     }
@@ -550,6 +590,9 @@ char* address_converting_2_word_length(ptr_file *list,char *command,char *operan
 char *convert_hexadecimal(int address){
     char hexadecimal[16] = "0123456789ABCDEF";
     char hexadecimal_list[5];
+    if(address<0){
+        address=address+8*16*16*16*16;
+    }
     int j=0;
     //上位ビットから格納
     for(int i=3;i>=0;i--){
