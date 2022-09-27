@@ -1,0 +1,15 @@
+OVERFLOW START
+        LAD     GR0, 32765
+        LAD     GR1, 1
+LOOP0   ADDA    GR0,    GR1  ;コメント
+        JOV     OUTLOOP0
+        JUMP    LOOP0
+OUTLOOP0    LAD     GR0, -32765
+        LAD     GR1, 1
+LOOP1   SUBA    GR0, GR1
+        JOV     OUTLOOP1
+        JUMP    LOOP1
+PRACTICE    =10
+practice    =20
+OUTLOOP1    RET
+        END
